@@ -13,8 +13,7 @@ def get_acc_with_contion(res_pd, key, values):
     else:
         total_pd = res_pd[res_pd[key] == values]
     correct_pd = total_pd[total_pd['true_false'] == True]
-    acc = "{:.2f}".format(len(correct_pd) / len(total_pd) * 100)
-    return acc
+    return "{:.2f}".format(len(correct_pd) / len(total_pd) * 100)
 
 def read_result_file(result_file):
     if result_file.endswith('.jsonl'):
@@ -55,22 +54,16 @@ def get_scores(result_files, data_file):
         for index, row in res_pd.iterrows():
             res_pd.loc[index, 'true_false'] = results[index]['true_false']
             # text context
-            if results[index]["example"]['hint'] != "":
-                
-                res_pd.loc[index, 'text_context'] = True
-            else:
-                res_pd.loc[index, 'text_context'] = False
+            res_pd.loc[index, 'text_context'] = results[index]["example"]['hint'] != ""
             # image context
-            if results[index]["example"]['image'] == "image.png":
-                res_pd.loc[index, 'image_context'] = True
-            else:
-                res_pd.loc[index, 'image_context'] = False
+            res_pd.loc[index, 'image_context'] = (
+                results[index]["example"]['image'] == "image.png"
+            )
             # no context
-            if results[index]["example"]['hint'] == "" and results[index]["example"]['image'] != "image.png":
-                res_pd.loc[index, 'no_context'] = True
-            else:
-                res_pd.loc[index, 'no_context'] = False
-
+            res_pd.loc[index, 'no_context'] = (
+                results[index]["example"]['hint'] == ""
+                and results[index]["example"]['image'] != "image.png"
+            )
         # append result pd
         res_pds.append(res_pd)
 
@@ -82,24 +75,23 @@ def get_scores(result_files, data_file):
 
     # accuracy scores
     acc_average = round(len(res_pd[res_pd['true_false'] == True]) / num * 100, 3)
-    #assert acc_average == round(result_data["acc"], 3)
-
-    scores = {
+    return {
         'acc_average': "{:.2f}".format(acc_average),
-
         'acc_nat': get_acc_with_contion(res_pd, 'subject', 'natural science'),
         'acc_sol': get_acc_with_contion(res_pd, 'subject', 'social science'),
         'acc_lan': get_acc_with_contion(res_pd, 'subject', 'language science'),
-
         'acc_txt': get_acc_with_contion(res_pd, 'text_context', True),
         'acc_img': get_acc_with_contion(res_pd, 'image_context', True),
         'acc_no': get_acc_with_contion(res_pd, 'no_context', True),
-        
-        'acc_grade_1_6': get_acc_with_contion(res_pd, 'grade', ["grade2", "grade3", "grade4", "grade5", "grade6"]),
-        'acc_grade_7_12': get_acc_with_contion(res_pd, 'grade', ["grade7", "grade8", "grade9", "grade10", "grade11", "grade12"]),
+        'acc_grade_1_6': get_acc_with_contion(
+            res_pd, 'grade', ["grade2", "grade3", "grade4", "grade5", "grade6"]
+        ),
+        'acc_grade_7_12': get_acc_with_contion(
+            res_pd,
+            'grade',
+            ["grade7", "grade8", "grade9", "grade10", "grade11", "grade12"],
+        ),
     }
-
-    return scores
 
 
 def print_scores(scores):

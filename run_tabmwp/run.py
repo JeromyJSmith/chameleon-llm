@@ -112,19 +112,18 @@ if __name__ == "__main__":
         if args.modules is not None:
             modules = args.modules
             print(f"# [Modules]\n{modules}\n")
-        else:
-            if args.model == 'cot':
-                modules = ["solution_generator", "answer_generator"]
-            elif args.model == 'pot':
-                modules = ["program_generator", "program_executor", "answer_generator"]
-            elif args.model == 'chameleon':    
-                modules = solver.predict_modules()
+        elif args.model == 'cot':
+            modules = ["solution_generator", "answer_generator"]
+        elif args.model == 'pot':
+            modules = ["program_generator", "program_executor", "answer_generator"]
+        elif args.model == 'chameleon':    
+            modules = solver.predict_modules()
         modules = [f"solver.{module}" for module in modules]
-            
+
         # [2] Execute the modules 
         if args.debug or count < 10:
             print(f"# [Modules]\n{modules}\n")
-            
+
         for module in modules:
             input, output = eval(module)() # eval the module and update the cache
             if args.debug or count < 10:
@@ -170,7 +169,7 @@ if __name__ == "__main__":
             except Exception as e:
                 print(e)
                 print(solver.cache)
-        
+
         with open(cache_jsonl, "a") as f:
             try:
                 json.dump(solver.cache, f)

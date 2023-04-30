@@ -42,18 +42,16 @@ class solver:
 
         # update metadata
         for pid, example in examples.items():
-            image = example["image"]
-            split = example["split"]
-            if image:
+            if image := example["image"]:
+                split = example["split"]
                 example["image_file"] = os.path.join(self.data_root, "images", split, pid, image)
             else:
                 example["image_file"] = ""
 
         # limit the number of test examples
-        if self.test_number > 0:
-            if self.test_number < len(pids):
-                pids = pids[:self.test_number]
-                examples = {key: value for key, value in examples.items() if key in pids}
+        if self.test_number > 0 and self.test_number < len(pids):
+            pids = pids[:self.test_number]
+            examples = {key: value for key, value in examples.items() if key in pids}
 
         # load caption data
         if os.path.exists(self.caption_file):
@@ -66,7 +64,7 @@ class solver:
             ocrs = json.load(open(self.ocr_file))["texts"]
             for pid in examples:
                 examples[pid]['ocr'] = ocrs[pid] if pid in ocrs else []
-        
+
 
         return examples, pids
 
@@ -74,7 +72,7 @@ class solver:
     def get_question_text(self):
         if "question_text" in self.cache:
             return self.cache["question_text"] 
-        
+
         # context
         text_context = self.cache["example"]["hint"]
         image_context = self.cache["example"]["caption"] if self.use_caption else ""
@@ -88,23 +86,23 @@ class solver:
 
         # question text
         question = self.cache["example"]["question"]
-        if context != "":
-            question_text = f"{question}\n\nContext: {context}\n\nOptions: {option}"
-        else:
-            question_text = f"{question}\n\nOptions: {option}"
-
+        question_text = (
+            f"{question}\n\nContext: {context}\n\nOptions: {option}"
+            if context
+            else f"{question}\n\nOptions: {option}"
+        )
         self.cache["question_text"] = question_text
         return question_text
 
     def get_metadata(self):
         if "metadata" in self.cache:
             return self.cache["metadata"] 
-        
-        # extract metadata
-        metadata = {}
+
         example = self.cache["example"]
-        metadata["has_image"] = True if example["image"] else False
-        metadata["grade"] = int(example["grade"].replace("grade", ""))
+        metadata = {
+            "has_image": bool(example["image"]),
+            "grade": int(example["grade"].replace("grade", "")),
+        }
         metadata["subject"] = example["subject"]
         metadata["topic"] = example["topic"]
         metadata["category"] = example["category"]
@@ -158,16 +156,11 @@ class solver:
         image_file = self.cache["example"]["image_file"]
         response = self.cache["response"] if "response" in self.cache else ""
 
-        # excute the module 
+        # excute the module
         if "caption" in self.cache["example"]:
             caption = self.cache["example"]["caption"]
         else:
-            if not os.path.exists(image_file):
-                caption = ""
-            else:
-                # TODO: run the image captioner model on the fly
-                caption = "" 
-
+            caption = "" if os.path.exists(image_file) else ""
         # uodate the response cache
         if caption != "":
             response += f"\n\nImage caption: {caption}"
@@ -194,14 +187,9 @@ class solver:
             except:
                 pass
         else:
-            if not os.path.exists(image_file):
-                texts = []
-            else:
-                # TODO: run the image captioner model on the fly
-                texts = []
-
+            texts = [] if os.path.exists(image_file) else []
         # uodate the response cache
-        if len(texts) > 0:
+        if texts:
             response += f"\n\nDetected text in the image: {texts}"
             response = response.strip()
 
@@ -233,7 +221,7 @@ class solver:
         knowledge = get_chat_response(messages, self.api_key, self.kr_engine, self.kr_temperature, self.kr_max_tokens)
 
         # update the response cache
-        if knowledge != "" and knowledge != None:
+        if knowledge not in ["", None]:
             response += f"\n\nKnowledge:\n{knowledge}"
             response = response.strip()
 
@@ -250,7 +238,7 @@ class solver:
         response = self.cache["response"] if "response" in self.cache else ""
 
         # demo prompt
-        demo_prompt = prompt_qg.prompt.strip() 
+        demo_prompt = prompt_qg.prompt.strip()
         # test prompt
         if response != "":
             test_prompt = f"Question: {question_text}\n\nMetadata: {metadata}\n\n{response}\n\nSearch Query: "
@@ -264,7 +252,7 @@ class solver:
 
         # execute the module
         query = get_chat_response(messages, self.api_key, self.qg_engine, self.qg_temperature, self.qg_max_tokens)
-        if query == "" or query == None:
+        if query == "" or query is None:
             query = None
 
         # update the cache
@@ -281,7 +269,7 @@ class solver:
         response = self.cache["response"] if "response" in self.cache else ""
 
         # excute the module (call the Bing Search API and get the responses)
-        if query != None and query != "":
+        if query not in [None, ""]:
             result = call_bing_search(endpoint, bing_api_key, query, count)
         else:
             result = None

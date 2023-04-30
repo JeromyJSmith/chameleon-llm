@@ -28,10 +28,9 @@ class solver:
         # load test data
         examples = json.load(open(os.path.join(self.data_root, f"problems_{self.test_split}.json")))
         pids = list(examples.keys())
-        if self.test_number > 0:
-            if self.test_number < len(pids):
-                pids = pids[:self.test_number]
-                examples = {key: value for key, value in examples.items() if key in pids}
+        if self.test_number > 0 and self.test_number < len(pids):
+            pids = pids[:self.test_number]
+            examples = {key: value for key, value in examples.items() if key in pids}
         return examples, pids
 
     def build_prompt_for_policy(self):
@@ -232,22 +231,21 @@ class solver:
             demo_prompt = prompt_pg.prompt_choice.strip()
         else:
             demo_prompt = prompt_pg.prompt_free.strip()
-        
+
         if table_title:
             instruction = f"Read the following table regarding {table_title} and then write Python code to answer a question:"
         else:
             instruction = "Read the following table and then write Python code to answer a question:"
-        
+
         if unit:
             question += f" (Unit: {unit})"
         if choices:
             question += f" Please select from the following options: {choices}."
 
-        if choices:
             solution = "# Python Code, return 'ans'. Make sure that 'ans' is a string selected from the options in the question"
         else:
             solution = "# Python Code, return 'ans'. Make sure that 'ans' is a number"
-        
+
         if context != "":
             test_prompt = f"{instruction}\n\n{table}\n\n{context}\n\n{question}\n\n{solution}"
         else:
@@ -276,13 +274,10 @@ class solver:
         # check if the program is valid
         if not isinstance(program, str):
             return False
-        if isinstance(program, str):
-            if "ans =" not in program:
-                return False
-        _output = safe_execute(program)
-        if _output in (None, "", [], {}):
+        if "ans =" not in program:
             return False
-        return True
+        _output = safe_execute(program)
+        return _output not in (None, "", [], {})
 
     def program_verifier(self):
         if "program" in self.cache:
@@ -409,10 +404,7 @@ class solver:
             output = self.cache["solution_generator:output"]
             pattern = re.compile(r"The answer is ([\s\S]+).$") # "The answer is XXXXX.",
             res = pattern.findall(output)
-            if len(res) > 0:
-                ans = res[-1].strip()
-            else:
-                ans = output
+            ans = res[-1].strip() if len(res) > 0 else output
         else:
             ans = None
 

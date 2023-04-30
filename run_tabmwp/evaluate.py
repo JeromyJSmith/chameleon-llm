@@ -13,8 +13,7 @@ def get_acc_with_contion(res_pd, key, values):
     else:
         total_pd = res_pd[res_pd[key] == values]
     correct_pd = total_pd[total_pd['true_false'] == True]
-    acc = "{:.2f}".format(len(correct_pd) / len(total_pd) * 100)
-    return acc
+    return "{:.2f}".format(len(correct_pd) / len(total_pd) * 100)
 
 def read_result_file(result_file):
     if result_file.endswith('.jsonl'):
@@ -66,22 +65,28 @@ def get_scores(result_files, data_file):
 
     # accuracy scores
     acc_average = round(len(res_pd[res_pd['true_false'] == True]) / num * 100, 3)
-    #assert acc_average == round(result_data["acc"], 3)
-
-    scores = {
+    return {
         'acc_average': "{:.2f}".format(acc_average),
         'acc_free': get_acc_with_contion(res_pd, 'ques_type', 'free_text'),
         'acc_mc': get_acc_with_contion(res_pd, 'ques_type', 'multi_choice'),
-        'acc_integer': get_acc_with_contion(res_pd, 'ans_type', 'integer_number'),
-        'acc_decimal': get_acc_with_contion(res_pd, 'ans_type', 'decimal_number'),
-        'acc_extractive': get_acc_with_contion(res_pd, 'ans_type', 'extractive_text'),
-        'acc_boolean': get_acc_with_contion(res_pd, 'ans_type', 'boolean_text'),
+        'acc_integer': get_acc_with_contion(
+            res_pd, 'ans_type', 'integer_number'
+        ),
+        'acc_decimal': get_acc_with_contion(
+            res_pd, 'ans_type', 'decimal_number'
+        ),
+        'acc_extractive': get_acc_with_contion(
+            res_pd, 'ans_type', 'extractive_text'
+        ),
+        'acc_boolean': get_acc_with_contion(
+            res_pd, 'ans_type', 'boolean_text'
+        ),
         'acc_other': get_acc_with_contion(res_pd, 'ans_type', 'other_text'),
-        'acc_grade_1_6': get_acc_with_contion(res_pd, 'grade', [1, 2, 3, 4, 5, 6]),
+        'acc_grade_1_6': get_acc_with_contion(
+            res_pd, 'grade', [1, 2, 3, 4, 5, 6]
+        ),
         'acc_grade_7_8': get_acc_with_contion(res_pd, 'grade', [7, 8]),
     }
-
-    return scores
 
 
 def print_scores(scores):

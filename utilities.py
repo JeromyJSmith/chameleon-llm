@@ -42,7 +42,7 @@ def get_codex_response(prompt, api_key, engine="code-davinci-002", temperature=0
                                                 frequency_penalty=0,
                                                 presence_penalty=0)
             prediction = response["choices"][0]["text"].strip()
-            if prediction != "" and prediction != None:
+            if prediction not in ["", None]:
                 return prediction
         except Exception as e:
             print(e)
@@ -66,7 +66,7 @@ def get_gpt3_response(prompt, api_key, engine="text-davinci-002", temperature=0,
                                                 frequency_penalty=0,
                                                 presence_penalty=0)
             prediction = response["choices"][0]["text"].strip()
-            if prediction != "" and prediction != None:
+            if prediction not in ["", None]:
                 return prediction
         except Exception as e:
             print(e)
@@ -87,11 +87,11 @@ def get_chat_response(messages, api_key, model="gpt-3.5-turbo", temperature=0, m
                                                 n=n)
             if n == 1:
                 prediction = response['choices'][0]['message']['content'].strip()
-                if prediction != "" and prediction != None:
+                if prediction not in ["", None]:
                     return prediction
             else:
                 prediction = [choice['message']['content'].strip() for choice in response['choices']]
-                if prediction[0] != "" and prediction[0] != None:
+                if prediction[0] not in ["", None]:
                     return prediction
 
         except Exception as e:
@@ -111,11 +111,10 @@ def floatify_ans(ans):
     elif type(ans) in [list, tuple]:
         if not ans:
             return None
-        else:
-            try:
-                ans = float(ans[0])
-            except Exception:
-                ans = str(ans[0])
+        try:
+            ans = float(ans[0])
+        except Exception:
+            ans = str(ans[0])
     else:
         try:
             ans = float(ans)
@@ -132,10 +131,7 @@ def score_string_similarity(str1, str2):
         overlap = list(set(str1_split) & set(str2_split))
         return len(overlap) / max(len(str1_split), len(str2_split))
     else:
-        if str1 == str2:
-            return 1.0
-        else:
-            return 0.0
+        return 0.0
         
 def normalize_prediction_tabmwp(prediction, options=None, unit=None):
     # the numerical answer
@@ -214,10 +210,7 @@ def normalize_prediction_scienceqa(prediction, options=None):
     return prediction
 
 def get_precision(gt_ans: float) -> int:
-    precision = 5
-    if '.' in str(gt_ans):
-        precision = len(str(gt_ans).split('.')[-1])
-    return precision
+    return len(str(gt_ans).split('.')[-1]) if '.' in str(gt_ans) else 5
     
 
 def safe_equal(prediction: Union[bool, float, str],
@@ -228,10 +221,7 @@ def safe_equal(prediction: Union[bool, float, str],
         return False
     elif type(prediction) == bool:
         # bool questions
-        if prediction:
-            return reference == 'yes'
-        else:
-            return reference == 'no'
+        return reference == 'yes' if prediction else reference == 'no'
     elif type(reference) == str and type(prediction) == str:
         # string questions
         prediction = prediction.strip().lower()
@@ -245,9 +235,8 @@ def safe_equal(prediction: Union[bool, float, str],
             gt_result = [reference]
         for item in gt_result:
             try:
-                if is_close:
-                    if isclose(item, prediction, rel_tol=0.001):
-                        return True
+                if is_close and isclose(item, prediction, rel_tol=0.001):
+                    return True
                 precision = min(get_precision(prediction), get_precision(item))
                 if round(prediction, precision) == round(item, precision):
                     return True
@@ -274,11 +263,10 @@ def call_bing_search(endpoint, bing_api_key, query, count):
         server_response = requests.get(server, headers=headers, params=params)
         resp_status = server_response.status_code
         if resp_status == 200:
-            result = server_response.json()
-            return result 
+            return server_response.json()
     except:
         pass
-    
+
     return None
     
 def parse_bing_result(result):
